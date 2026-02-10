@@ -1,0 +1,110 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f6f7fb;
+  color: #1f2937;
+}
+
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.card {
+  background: #ffffff;
+  padding: 20px 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  margin-bottom: 32px;
+}
+
+form {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.upload {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+input[type="file"] {
+  padding: 8px 0;
+}
+
+button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+.alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.results h2 {
+  margin-bottom: 4px;
+}
+
+.batch {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.result-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.result-card img {
+  width: 100%;
+  display: block;
+}
+
+.meta {
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
