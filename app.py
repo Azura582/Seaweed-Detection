@@ -1,7 +1,10 @@
+import json
 import os
+import shutil
+import time
 import uuid
 from datetime import datetime
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
 
@@ -16,8 +19,12 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 WEIGHTS_PATH = os.path.join(APP_ROOT, "best.pt")
 UPLOAD_DIR = os.path.join(APP_ROOT, "static", "uploads")
 RESULT_DIR = os.path.join(APP_ROOT, "static", "results")
+HISTORY_DIR = os.path.join(APP_ROOT, "data")
+HISTORY_FILE = os.path.join(HISTORY_DIR, "history.json")
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp"}
 MAX_FILES = 9
+HISTORY_KEEP_SECONDS = 7 * 24 * 60 * 60
+HISTORY_PAGE_SIZE = 3
 
 MODEL = None
 
@@ -25,11 +32,51 @@ MODEL = None
 def ensure_dirs() -> None:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     os.makedirs(RESULT_DIR, exist_ok=True)
+    os.makedirs(HISTORY_DIR, exist_ok=True)
 
 
 def allowed_file(filename: str) -> bool:
     _, ext = os.path.splitext(filename.lower())
     return ext in ALLOWED_EXTENSIONS
+
+
+def load_history() -> List[Dict[str, Any]]:
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+            if isinstance(data, list):
+                for batch in data:
+                    if "records" not in batch and "items" in batch:
+                        batch["records"] = batch.pop("items")
+                return data
+    except (OSError, json.JSONDecodeError):
+        return []
+    return []
+
+
+def save_history(history: List[Dict[str, Any]]) -> None:
+    with open(HISTORY_FILE, "w", encoding="utf-8") as handle:
+        json.dump(history, handle, ensure_ascii=False, indent=2)
+
+
+def cleanup_history(history: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    now = time.time()
+    kept: List[Dict[str, Any]] = []
+    for batch in history:
+        created_ts = batch.get("created_ts", 0)
+        if created_ts and now - float(created_ts) <= HISTORY_KEEP_SECONDS:
+            kept.append(batch)
+            continue
+
+        upload_dir = batch.get("upload_dir")
+        result_dir = batch.get("result_dir")
+        for dir_path in (upload_dir, result_dir):
+            if dir_path and os.path.isdir(dir_path):
+                shutil.rmtree(dir_path, ignore_errors=True)
+
+    return kept
 
 
 def get_model() -> YOLO:
@@ -115,6 +162,8 @@ app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 @app.route("/", methods=["GET", "POST"])
 def index():
     ensure_dirs()
+    history = cleanup_history(load_history())
+    save_history(history)
 
     if request.method == "POST":
         files = request.files.getlist("images")
@@ -152,13 +201,47 @@ def index():
                 {
                     "filename": safe_name,
                     "detections": count,
-                    "url": f"/static/results/{batch_id}/{safe_name}",
+                    "upload_url": f"/static/uploads/{batch_id}/{safe_name}",
+                    "result_url": f"/static/results/{batch_id}/{safe_name}",
                 }
             )
+        batch_record = {
+            "batch_id": batch_id,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "created_ts": time.time(),
+            "upload_dir": batch_upload_dir,
+            "result_dir": batch_result_dir,
+            "records": results_payload,
+        }
 
-        return render_template("index.html", results=results_payload, batch_id=batch_id)
+        history.insert(0, batch_record)
+        save_history(history)
+
+        return render_template(
+            "index.html",
+            results=results_payload,
+            batch_id=batch_id,
+        )
 
     return render_template("index.html")
+
+
+@app.route("/history", methods=["GET"])
+def history_page():
+    ensure_dirs()
+    history = cleanup_history(load_history())
+    save_history(history)
+    page = max(1, int(request.args.get("page", 1)))
+    total_pages = max(1, (len(history) + HISTORY_PAGE_SIZE - 1) // HISTORY_PAGE_SIZE)
+    start = (page - 1) * HISTORY_PAGE_SIZE
+    end = start + HISTORY_PAGE_SIZE
+    paged_history = history[start:end]
+    return render_template(
+        "history.html",
+        history_batches=paged_history,
+        history_page=page,
+        history_pages=total_pages,
+    )
 
 
 if __name__ == "__main__":

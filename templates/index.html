@@ -11,6 +11,10 @@
       <header>
         <h1>海藻检测与最短路径</h1>
         <p>上传 1-9 张图片，系统会在原图上绘制检测框、中心点和最短路径。</p>
+        <div class="header-actions">
+          <a href="#results" class="header-btn">查看本次结果</a>
+          <a href="/history" class="header-btn secondary">查看历史记录</a>
+        </div>
       </header>
 
       <section class="card">
@@ -28,21 +32,89 @@
 
       {% if results %}
       <section class="results">
-        <h2>检测结果</h2>
+        <h2>本次检测结果</h2>
         <p class="batch">批次：{{ batch_id }}</p>
         <div class="grid">
           {% for item in results %}
           <div class="result-card">
-            <img src="{{ item.url }}" alt="{{ item.filename }}" />
+            <div class="image-pair">
+              <div class="image-box">
+                <span class="image-label">原图</span>
+                <img
+                  src="{{ item.upload_url }}"
+                  alt="{{ item.filename }} 原图"
+                  data-full="{{ item.upload_url }}"
+                  data-title="{{ item.filename }} 原图"
+                />
+              </div>
+              <div class="image-box">
+                <span class="image-label">结果图</span>
+                <img
+                  src="{{ item.result_url }}"
+                  alt="{{ item.filename }} 结果图"
+                  data-full="{{ item.result_url }}"
+                  data-title="{{ item.filename }} 结果图"
+                />
+              </div>
+            </div>
             <div class="meta">
               <strong>{{ item.filename }}</strong>
               <span>检测到 {{ item.detections }} 个目标</span>
+              <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
             </div>
           </div>
           {% endfor %}
         </div>
       </section>
       {% endif %}
+
     </div>
+    <div id="lightbox" class="lightbox" aria-hidden="true">
+      <div class="lightbox-content">
+        <button class="lightbox-close" type="button" aria-label="关闭">×</button>
+        <img id="lightbox-img" src="" alt="放大图" />
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+      </div>
+    </div>
+    <script>
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      const closeBtn = document.querySelector('.lightbox-close');
+
+      function openLightbox(url, title) {
+        lightboxImg.src = url;
+        lightboxCaption.textContent = title || '';
+        lightbox.classList.add('active');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('active');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        document.body.style.overflow = '';
+      }
+
+      document.querySelectorAll('img[data-full]').forEach((img) => {
+        img.addEventListener('click', () => {
+          openLightbox(img.dataset.full, img.dataset.title);
+        });
+      });
+
+      lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+          closeLightbox();
+        }
+      });
+
+      closeBtn.addEventListener('click', closeLightbox);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeLightbox();
+        }
+      });
+    </script>
   </body>
 </html>

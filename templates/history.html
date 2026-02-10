@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>历史记录 - 海藻检测与路径规划</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>上传历史记录</h1>
+        <p>保留 7 天内记录，可单独查看与下载结果图。</p>
+        <div class="header-actions">
+          <a href="/" class="header-btn">返回首页</a>
+          <a href="#history" class="header-btn secondary">跳转历史列表</a>
+        </div>
+      </header>
+
+      {% if history_batches %}
+      <section class="history" id="history">
+        <div class="history-title">
+          <div>
+            <h2>历史批次</h2>
+            <p class="batch">保留 7 天内记录</p>
+          </div>
+          {% if history_pages and history_pages > 1 %}
+          <div class="pagination">
+            {% if history_page > 1 %}
+            <a class="page-btn" href="?page={{ history_page - 1 }}#history">上一页</a>
+            {% else %}
+            <span class="page-btn disabled">上一页</span>
+            {% endif %}
+            <span class="page-info">第 {{ history_page }} / {{ history_pages }} 页</span>
+            {% if history_page < history_pages %}
+            <a class="page-btn" href="?page={{ history_page + 1 }}#history">下一页</a>
+            {% else %}
+            <span class="page-btn disabled">下一页</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% for batch in history_batches %}
+        <div class="history-batch">
+          <div class="history-header">
+            <strong>{{ batch.created_at }}</strong>
+            <span>批次：{{ batch.batch_id }}</span>
+          </div>
+          <div class="grid">
+            {% for item in batch.records %}
+            <div class="result-card">
+              <div class="image-pair">
+                <div class="image-box">
+                  <span class="image-label">原图</span>
+                  <img
+                    src="{{ item.upload_url }}"
+                    alt="{{ item.filename }} 原图"
+                    data-full="{{ item.upload_url }}"
+                    data-title="{{ item.filename }} 原图"
+                  />
+                </div>
+                <div class="image-box">
+                  <span class="image-label">结果图</span>
+                  <img
+                    src="{{ item.result_url }}"
+                    alt="{{ item.filename }} 结果图"
+                    data-full="{{ item.result_url }}"
+                    data-title="{{ item.filename }} 结果图"
+                  />
+                </div>
+              </div>
+              <div class="meta">
+                <strong>{{ item.filename }}</strong>
+                <span>检测到 {{ item.detections }} 个目标</span>
+                <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+      {% else %}
+      <section class="card">
+        <h2>暂无历史记录</h2>
+        <p class="batch">请先返回首页上传图片生成记录。</p>
+      </section>
+      {% endif %}
+    </div>
+    <div id="lightbox" class="lightbox" aria-hidden="true">
+      <div class="lightbox-content">
+        <button class="lightbox-close" type="button" aria-label="关闭">×</button>
+        <img id="lightbox-img" src="" alt="放大图" />
+        <div class="lightbox-caption" id="lightbox-caption"></div>
+      </div>
+    </div>
+    <script>
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      const closeBtn = document.querySelector('.lightbox-close');
+
+      function openLightbox(url, title) {
+        lightboxImg.src = url;
+        lightboxCaption.textContent = title || '';
+        lightbox.classList.add('active');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('active');
+        lightbox.setAttribute('aria-hidden', 'true');
+        lightboxImg.src = '';
+        document.body.style.overflow = '';
+      }
+
+      document.querySelectorAll('img[data-full]').forEach((img) => {
+        img.addEventListener('click', () => {
+          openLightbox(img.dataset.full, img.dataset.title);
+        });
+      });
+
+      lightbox.addEventListener('click', (event) => {
+        if (event.target === lightbox) {
+          closeLightbox();
+        }
+      });
+
+      closeBtn.addEventListener('click', closeLightbox);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeLightbox();
+        }
+      });
+    </script>
+  </body>
+</html>
