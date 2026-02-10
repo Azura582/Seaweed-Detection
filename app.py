@@ -88,14 +88,27 @@ def get_model() -> YOLO:
     return MODEL
 
 
-def draw_detections_and_path(image: np.ndarray, boxes: List[Tuple[float, float, float, float]]) -> np.ndarray:
+def draw_detections_and_path(
+    image: np.ndarray,
+    boxes: List[Tuple[float, float, float, float]],
+    confidences: List[float],
+) -> np.ndarray:
     output = image.copy()
     points: List[Tuple[int, int]] = []
 
-    for x1, y1, x2, y2 in boxes:
+    for (x1, y1, x2, y2), conf in zip(boxes, confidences):
         p1 = (int(x1), int(y1))
         p2 = (int(x2), int(y2))
         cv2.rectangle(output, p1, p2, (0, 255, 0), 2)
+        cv2.putText(
+            output,
+            f"{conf:.2f}",
+            (p1[0], max(p1[1] - 6, 12)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 0, 255),
+            2,
+        )
         cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
         points.append((cx, cy))
         cv2.circle(output, (cx, cy), 4, (0, 0, 255), -1)
@@ -135,24 +148,38 @@ def draw_detections_and_path(image: np.ndarray, boxes: List[Tuple[float, float, 
     return output
 
 
-def process_image(image_path: str, output_path: str) -> int:
+def process_image(image_path: str, output_path: str) -> Tuple[int, float, float]:
     model = get_model()
     image = cv2.imread(image_path)
     if image is None:
         raise ValueError("无法读取图片")
 
-    results = model.predict(image_path, conf=0.25, imgsz=256, verbose=False, device="cpu")
+    results = model.predict(
+        image_path,
+        conf=0.25,
+        imgsz=256,
+        verbose=False,
+        iou=0.45,
+        device="cpu",
+        show_labels=True,
+        show_conf=True,
+    )
     result = results[0]
 
     if result.boxes is None or len(result.boxes) == 0:
         boxes = []
+        confidences = []
     else:
         boxes = result.boxes.xyxy.cpu().numpy().tolist()
+        confidences = result.boxes.conf.cpu().numpy().tolist()
 
-    output_img = draw_detections_and_path(image, boxes)
+    avg_conf = float(np.mean(confidences)) if confidences else 0.0
+    max_conf = float(np.max(confidences)) if confidences else 0.0
+
+    output_img = draw_detections_and_path(image, boxes, confidences)
     cv2.imwrite(output_path, output_img)
 
-    return len(boxes)
+    return len(boxes), avg_conf, max_conf
 
 
 app = Flask(__name__)
@@ -193,7 +220,7 @@ def index():
             file.save(upload_path)
 
             try:
-                count = process_image(upload_path, result_path)
+                count, avg_conf, max_conf = process_image(upload_path, result_path)
             except Exception as exc:
                 return render_template("index.html", error=f"处理 {safe_name} 失败: {exc}")
 
@@ -201,6 +228,8 @@ def index():
                 {
                     "filename": safe_name,
                     "detections": count,
+                    "avg_conf": avg_conf,
+                    "max_conf": max_conf,
                     "upload_url": f"/static/uploads/{batch_id}/{safe_name}",
                     "result_url": f"/static/results/{batch_id}/{safe_name}",
                 }

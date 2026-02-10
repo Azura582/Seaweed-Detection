@@ -133,6 +133,11 @@ button:hover {
   gap: 6px;
 }
 
+.conf {
+  color: #64748b;
+  font-size: 13px;
+}
+
 .image-pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
