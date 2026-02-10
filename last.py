@@ -94,7 +94,7 @@ def process_images():
   
     print(f"正在加载模型: {MODEL_PATH} ...")
     try:
-        model = YOLO(MODEL_PATH)
+        model = YOLO(MODEL_PATH).to("cpu")
     except Exception as e:
         print(f"错误: 无法加载模型，请检查路径。详细信息: {e}")
         return
