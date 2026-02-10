@@ -2,3 +2,4 @@
 *.png
 images/
 runs/
+__pycache__/
