@@ -74,6 +74,21 @@ input[type="file"] {
   padding: 8px 0;
 }
 
+input[type="file"]::file-selector-button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: #1d4ed8;
+}
+
 button {
   background: #2563eb;
   color: #fff;
