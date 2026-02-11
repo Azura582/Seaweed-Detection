@@ -148,7 +148,7 @@ def draw_detections_and_path(
     return output
 
 
-def process_image(image_path: str, output_path: str) -> Tuple[int, float, float]:
+def process_image(image_path: str, output_path: str) -> Tuple[int, float, float, List[float]]:
     model = get_model()
     image = cv2.imread(image_path)
     if image is None:
@@ -179,7 +179,7 @@ def process_image(image_path: str, output_path: str) -> Tuple[int, float, float]
     output_img = draw_detections_and_path(image, boxes, confidences)
     cv2.imwrite(output_path, output_img)
 
-    return len(boxes), avg_conf, max_conf
+    return len(boxes), avg_conf, max_conf, confidences
 
 
 app = Flask(__name__)
@@ -220,7 +220,7 @@ def index():
             file.save(upload_path)
 
             try:
-                count, avg_conf, max_conf = process_image(upload_path, result_path)
+                count, avg_conf, max_conf, confidences = process_image(upload_path, result_path)
             except Exception as exc:
                 return render_template("index.html", error=f"处理 {safe_name} 失败: {exc}")
 
@@ -230,6 +230,7 @@ def index():
                     "detections": count,
                     "avg_conf": avg_conf,
                     "max_conf": max_conf,
+                    "confidences": confidences,
                     "upload_url": f"/static/uploads/{batch_id}/{safe_name}",
                     "result_url": f"/static/results/{batch_id}/{safe_name}",
                 }

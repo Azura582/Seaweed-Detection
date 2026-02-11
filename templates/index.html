@@ -61,6 +61,14 @@
               <strong>{{ item.filename }}</strong>
               <span>检测到 {{ item.detections }} 个目标</span>
               <span class="conf">平均置信度 {{ (item.avg_conf or 0) | round(2) }} · 最高 {{ (item.max_conf or 0) | round(2) }}</span>
+              {% if item.confidences %}
+              <div class="conf-list">
+                <span>目标置信度：</span>
+                {% for conf in item.confidences %}
+                <span class="conf-chip">{{ loop.index }}: {{ conf | round(2) }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
               <a class="download" href="{{ item.result_url }}" download>下载结果图</a>
             </div>
           </div>
