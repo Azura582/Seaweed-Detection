@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>历史记录 - 海藻检测</title>
     <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.css" />
   </head>
   <body>
     <div class="page">
@@ -96,51 +97,47 @@
       </section>
       {% endif %}
     </div>
-    <div id="lightbox" class="lightbox" aria-hidden="true">
-      <div class="lightbox-content">
-        <button class="lightbox-close" type="button" aria-label="关闭">×</button>
-        <img id="lightbox-img" src="" alt="放大图" />
-        <div class="lightbox-caption" id="lightbox-caption"></div>
-      </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/viewerjs@1.11.6/dist/viewer.min.js"></script>
     <script>
-      const lightbox = document.getElementById('lightbox');
-      const lightboxImg = document.getElementById('lightbox-img');
-      const lightboxCaption = document.getElementById('lightbox-caption');
-      const closeBtn = document.querySelector('.lightbox-close');
-
-      function openLightbox(url, title) {
-        lightboxImg.src = url;
-        lightboxCaption.textContent = title || '';
-        lightbox.classList.add('active');
-        lightbox.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeLightbox() {
-        lightbox.classList.remove('active');
-        lightbox.setAttribute('aria-hidden', 'true');
-        lightboxImg.src = '';
-        document.body.style.overflow = '';
-      }
-
-      document.querySelectorAll('img[data-full]').forEach((img) => {
-        img.addEventListener('click', () => {
-          openLightbox(img.dataset.full, img.dataset.title);
+      document.addEventListener('DOMContentLoaded', function() {
+        // 为所有图片容器初始化 Viewer.js
+        const imagePairs = document.querySelectorAll('.image-pair');
+        
+        imagePairs.forEach(function(container) {
+          new Viewer(container, {
+            inline: false,
+            navbar: true,
+            title: true,
+            toolbar: {
+              zoomIn: true,
+              zoomOut: true,
+              oneToOne: true,
+              reset: true,
+              prev: true,
+              play: false,
+              next: true,
+              rotateLeft: true,
+              rotateRight: true,
+              flipHorizontal: true,
+              flipVertical: true,
+            },
+            tooltip: true,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+            transition: true,
+            fullscreen: true,
+            keyboard: true,
+            url: 'data-full',
+            ready: function() {
+              // 可在此添加自定义逻辑
+            },
+            viewed: function() {
+              // 图片显示完成后回调
+            }
+          });
         });
-      });
-
-      lightbox.addEventListener('click', (event) => {
-        if (event.target === lightbox) {
-          closeLightbox();
-        }
-      });
-
-      closeBtn.addEventListener('click', closeLightbox);
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          closeLightbox();
-        }
       });
     </script>
   </body>
